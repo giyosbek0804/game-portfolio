@@ -4,6 +4,7 @@ import React, { useState, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useGameStore } from "@/store/useGameStore";
 import { useClinicQueueStore } from "@/store/useClinicQueueStore";
+import { useMenutopiaStore } from "@/store/useMenutopiaStore";
 import { RoomGeometry } from "./RoomGeometry";
 import { RoomLights } from "./RoomLights";
 import { FirstPersonCamera } from "./FirstPersonCamera";
@@ -45,6 +46,10 @@ export const RoomScene: React.FC = () => {
       useGameStore.getState().interactWithVisitor(target.id);
     } else if (target.type === "kiosk") {
       useClinicQueueStore.getState().takeUserTicket();
+    } else if (target.type === "restaurant-kiosk") {
+      useMenutopiaStore.getState().placePlayerOrder();
+    } else if (target.type === "pickup-counter") {
+      useMenutopiaStore.getState().pickupPlayerOrder();
     }
   }, []);
 

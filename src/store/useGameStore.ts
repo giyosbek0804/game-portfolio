@@ -13,9 +13,9 @@ export interface PlayerState {
   pitch: number;
 }
 
-export type PlayerZone = "outside" | "living-room" | "museum" | "clinic";
+export type PlayerZone = "outside" | "living-room" | "museum" | "clinic" | "menutopia";
 
-export type InteractableType = "switch" | "door" | "pedestal" | "visitor" | "kiosk";
+export type InteractableType = "switch" | "door" | "pedestal" | "visitor" | "kiosk" | "restaurant-kiosk" | "pickup-counter";
 
 export interface VisitorInfo {
   id: string;

@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { PatientEntity, useClinicQueueStore } from "@/store/useClinicQueueStore";
+import { useGameStore } from "@/store/useGameStore";
 
 interface ClinicDummyPatientProps {
   patient: PatientEntity;
@@ -73,6 +74,10 @@ export const ClinicDummyPatient: React.FC<ClinicDummyPatientProps> = ({
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
+
+    // Performance safeguard: halt updates when player is outside or in distant rooms
+    const playerZone = useGameStore.getState().playerZone;
+    if (playerZone !== "clinic" && playerZone !== "museum") return;
 
     let targetYaw = currentYaw.current;
 

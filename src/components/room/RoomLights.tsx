@@ -139,6 +139,40 @@ export const RoomLights: React.FC = () => {
           <meshStandardMaterial color="#0f172a" roughness={0.5} />
         </mesh>
       </group>
+
+      {/* ========================================================= */}
+      {/* 4. NAVBAT CLINIC HYGIENIC ILLUMINATION                    */}
+      {/* ========================================================= */}
+      <group position={[-10.2, 3.2, -11.0]} name="clinic-lighting">
+        <pointLight
+          color="#f0fdfa"
+          intensity={22}
+          distance={14}
+          decay={2}
+        />
+      </group>
+
+      {/* ========================================================= */}
+      {/* 5. MENUTOPIA RESTAURANT & KITCHEN ILLUMINATION            */}
+      {/* ========================================================= */}
+      {/* Dining Hall Warm Glow */}
+      <group position={[10.2, 3.2, -11.0]} name="menutopia-dining-light">
+        <pointLight
+          color="#fed7aa"
+          intensity={24}
+          distance={14}
+          decay={2}
+        />
+      </group>
+      {/* Kitchen Bright Stainless Task Lighting */}
+      <group position={[10.2, 3.2, -15.5]} name="menutopia-kitchen-light">
+        <pointLight
+          color="#ffffff"
+          intensity={26}
+          distance={12}
+          decay={2}
+        />
+      </group>
     </group>
   );
 };

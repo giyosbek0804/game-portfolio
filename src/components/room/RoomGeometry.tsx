@@ -17,6 +17,7 @@ import { PaintingFrame } from "./PaintingFrame";
 import { SingleWallSwitch } from "./SingleWallSwitch";
 import { MuseumPedestal } from "./MuseumPedestal";
 import { ClinicRoomGeometry } from "@/components/clinic/ClinicRoomGeometry";
+import { MenutopiaRoomGeometry } from "@/components/menutopia/MenutopiaRoomGeometry";
 
 export const RoomGeometry: React.FC = () => {
   // Procedural textures
@@ -84,6 +85,7 @@ export const RoomGeometry: React.FC = () => {
         color: stonePorchTexture ? "#ffffff" : "#1e242b",
         roughness: 0.85,
         metalness: 0.05,
+        side: THREE.DoubleSide,
       }),
     [stonePorchTexture]
   );
@@ -106,6 +108,7 @@ export const RoomGeometry: React.FC = () => {
         color: interiorWallTexture ? "#ffffff" : "#242831",
         roughness: 0.85,
         metalness: 0.05,
+        side: THREE.DoubleSide,
       }),
     [interiorWallTexture]
   );
@@ -349,14 +352,58 @@ export const RoomGeometry: React.FC = () => {
         <planeGeometry args={[museumW, museumH]} />
       </mesh>
 
-      {/* Museum East Wall (x = +6) */}
+      {/* Museum East Wall (x = +6) with Opening into Menutopia Restaurant Wing (z = -10.3 to -12.7) */}
+      {/* Segment 1: South of archway (z from -7.0 to -10.3) */}
       <mesh
-        position={[museumW / 2, museumH / 2, -roomD - museumD / 2]}
+        position={[museumW / 2, museumH / 2, -8.65]}
         rotation={[0, -Math.PI / 2, 0]}
         material={interiorWallMat}
       >
-        <planeGeometry args={[museumD, museumH]} />
+        <planeGeometry args={[3.3, museumH]} />
       </mesh>
+
+      {/* Segment 2: North of archway (z from -12.7 to -17.0) */}
+      <mesh
+        position={[museumW / 2, museumH / 2, -14.85]}
+        rotation={[0, -Math.PI / 2, 0]}
+        material={interiorWallMat}
+      >
+        <planeGeometry args={[4.3, museumH]} />
+      </mesh>
+
+      {/* Segment 3: Above archway (from y = 2.8 to 3.8) */}
+      <mesh
+        position={[museumW / 2, 3.3, -11.5]}
+        rotation={[0, -Math.PI / 2, 0]}
+        material={interiorWallMat}
+      >
+        <planeGeometry args={[2.4, 1.0]} />
+      </mesh>
+
+      {/* Menutopia Restaurant Wing Architectural Archway Trim & Sign in Museum */}
+      <group position={[museumW / 2 - 0.02, 0, -11.5]}>
+        {/* Left Pillar Trim */}
+        <mesh position={[0, 1.4, 1.2]} material={archMoldingMat}>
+          <boxGeometry args={[0.08, 2.8, 0.12]} />
+        </mesh>
+        {/* Right Pillar Trim */}
+        <mesh position={[0, 1.4, -1.2]} material={archMoldingMat}>
+          <boxGeometry args={[0.08, 2.8, 0.12]} />
+        </mesh>
+        {/* Header Trim */}
+        <mesh position={[0, 2.85, 0]} material={archMoldingMat}>
+          <boxGeometry args={[0.08, 0.12, 2.52]} />
+        </mesh>
+        {/* Illuminated Menutopia Restaurant Sign Plaque */}
+        <mesh position={[-0.01, 3.02, 0]}>
+          <boxGeometry args={[0.03, 0.22, 2.2]} />
+          <meshStandardMaterial
+            color="#b91c1c"
+            emissive="#dc2626"
+            emissiveIntensity={0.6}
+          />
+        </mesh>
+      </group>
 
       {/* Museum West Wall (x = -6) with Opening into Navbat Clinic Wing (z = -10.3 to -12.7) */}
       {/* Segment 1: South of archway (z from -7.0 to -10.3) */}
@@ -496,6 +543,11 @@ export const RoomGeometry: React.FC = () => {
           6. NAVBAT CLINIC WAITING HALL & DOCTOR'S OFFICE
           ───────────────────────────────────────────────────────────── */}
       <ClinicRoomGeometry />
+
+      {/* ─────────────────────────────────────────────────────────────
+          7. MENUTOPIA FAST-FOOD RESTAURANT & COMMERCIAL KITCHEN
+          ───────────────────────────────────────────────────────────── */}
+      <MenutopiaRoomGeometry />
     </group>
   );
 };

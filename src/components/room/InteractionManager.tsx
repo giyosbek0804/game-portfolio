@@ -48,7 +48,7 @@ export const InteractionManager: React.FC = () => {
       let obj: THREE.Object3D | null = hit.object;
       while (obj && obj !== scene) {
         if (obj.userData?.isInteractable) {
-          const type = obj.userData.type as "switch" | "door" | "pedestal" | "visitor" | "kiosk";
+          const type = obj.userData.type as "switch" | "door" | "pedestal" | "visitor" | "kiosk" | "restaurant-kiosk" | "pickup-counter";
           const id = obj.userData.id as string;
           const name = obj.userData.name as string;
           const data = obj.userData.data as ProjectItem | undefined;
@@ -59,6 +59,8 @@ export const InteractionManager: React.FC = () => {
           else if (type === "pedestal") actionText = `Inspect: ${name}`;
           else if (type === "visitor") actionText = `Talk to ${name}`;
           else if (type === "kiosk") actionText = "Get Golden VIP Ticket";
+          else if (type === "restaurant-kiosk") actionText = "Order Chef's Special (VIP)";
+          else if (type === "pickup-counter") actionText = "Pick Up Your Order";
 
           foundTarget = { type, id, name, actionText, data };
           break;

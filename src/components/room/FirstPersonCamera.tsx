@@ -270,29 +270,55 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
         camera.position.z = Math.max(-6.52, camera.position.z);
       }
     } else {
-      // ZONE: MUSEUM GALLERY OR NAVBAT CLINIC WING (z <= -7.0)
-      // Clinic Archway between Museum and Clinic is at x = -5.4, z between -10.2 and -12.8
-      const isInClinicArchway = z >= -12.8 && z <= -10.2;
+      // ═════════════════════════════════════════════════════════════════
+      // ZONE: MUSEUM GALLERY, NAVBAT CLINIC, OR MENUTOPIA RESTAURANT (z <= -7.0)
+      // ═════════════════════════════════════════════════════════════════
+      const isInArchwayZ = camera.position.z >= -12.55 && camera.position.z <= -10.45;
 
-      if (x < -5.3) {
-        // ─── PLAYER IS INSIDE NAVBAT CLINIC WING ───
+      // ─── 1. CLINIC PORTAL CORRIDOR (x between -6.3 and -4.9) ───
+      if (camera.position.x >= -6.3 && camera.position.x <= -4.9) {
+        if (isInArchwayZ) {
+          // Smooth glide through archway corridor without jamb clipping
+          camera.position.z = Math.min(-10.55, Math.max(-12.45, camera.position.z));
+        } else {
+          // Outside opening: prevent clipping into solid wall pillars
+          if (camera.position.x < -5.6) {
+            camera.position.x = -6.1; // Back into clinic
+          } else {
+            camera.position.x = -5.15; // Back into museum
+          }
+        }
+      }
+
+      // ─── 2. MENUTOPIA PORTAL CORRIDOR (x between 4.9 and 6.3) ───
+      else if (camera.position.x >= 4.9 && camera.position.x <= 6.3) {
+        if (isInArchwayZ) {
+          // Smooth glide through archway corridor without jamb clipping
+          camera.position.z = Math.min(-10.55, Math.max(-12.45, camera.position.z));
+        } else {
+          // Outside opening: prevent clipping into solid wall pillars
+          if (camera.position.x > 5.6) {
+            camera.position.x = 6.1; // Back into menutopia
+          } else {
+            camera.position.x = 5.15; // Back into museum
+          }
+        }
+      }
+
+      // ─── 3. INSIDE NAVBAT CLINIC WING (x < -6.3) ───
+      if (camera.position.x < -5.6) {
         camera.position.x = Math.max(-13.4, camera.position.x); // West Wall at -14.0
         camera.position.z = Math.min(-8.8, camera.position.z);  // North Wall at -8.5
         camera.position.z = Math.max(-16.8, camera.position.z); // South Wall at -17.2
 
-        // East wall boundary (Archway back to Museum is at x = -5.4)
-        if (camera.position.z > -13.5) {
-          // In Waiting Hall: cannot walk through solid east wall unless in archway
-          if (!isInClinicArchway && camera.position.x > -5.9) {
-            camera.position.x = -5.9;
-          }
-        } else {
-          // In Doctor Office: east wall is at x = -8.0
-          camera.position.x = Math.min(-8.4, camera.position.x);
+        // Solid East Wall
+        if (!isInArchwayZ && camera.position.z > -13.5) {
+          camera.position.x = Math.min(-6.1, camera.position.x);
+        } else if (camera.position.z <= -13.5) {
+          camera.position.x = Math.min(-8.4, camera.position.x); // Doctor office east wall
         }
 
-        // Dividing Wall between Waiting Hall & Doctor Office at z = -13.5
-        // Doorway is at x = -10.5 (width 1.25m corridor)
+        // Doctor Office Doorway at z = -13.5 (Corridor width 1.3m)
         const doctorDoorOpen = useClinicQueueStore.getState().doctorDoorOpen;
         const isUserTurn = useClinicQueueStore.getState().isUserTurn;
         const userTicketStatus = useClinicQueueStore.getState().userTicketStatus;
@@ -301,21 +327,70 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
 
         if (!isAtDoctorDoorway || !canPassDoor) {
           if (camera.position.z > -13.5) {
-            // In Waiting Hall: stop before hitting dividing wall from North
             camera.position.z = Math.max(-13.1, camera.position.z);
           } else {
-            // In Doctor Office: stop before hitting dividing wall from South
             camera.position.z = Math.min(-13.9, camera.position.z);
           }
         }
-      } else {
-        // PLAYER IS INSIDE MUSEUM GALLERY
-        camera.position.x = Math.min(5.3, camera.position.x);
-        camera.position.z = Math.max(-16.2, camera.position.z);
+      }
 
-        // West Wall of Museum (x = -5.4) has Clinic Archway at z = -10.3 to -12.7
-        if (!isInClinicArchway) {
-          camera.position.x = Math.max(-5.3, camera.position.x);
+      // ─── 4. INSIDE MENUTOPIA RESTAURANT & KITCHEN (x > 5.6) ───
+      else if (camera.position.x > 5.6) {
+        camera.position.x = Math.min(14.0, camera.position.x); // East Wall at +14.5
+        camera.position.z = Math.min(-8.8, camera.position.z);  // North Wall at -8.5
+        camera.position.z = Math.max(-16.8, camera.position.z); // South Wall at -17.2
+
+        // Solid West Wall
+        if (!isInArchwayZ) {
+          camera.position.x = Math.max(6.1, camera.position.x);
+        }
+
+        // Kitchen Walk-In Doorway at z = -13.5 (Corridor width 1.3m at x = 10.0)
+        const isAtKitchenDoorway = Math.abs(camera.position.x - 10.0) < 0.65;
+        if (!isAtKitchenDoorway) {
+          if (camera.position.z > -13.5) {
+            camera.position.z = Math.max(-13.1, camera.position.z);
+          } else {
+            camera.position.z = Math.min(-13.9, camera.position.z);
+          }
+        }
+
+        // Dining Table Collisions [8.0, 0, -9.8], [10.2, 0, -9.8], [12.4, 0, -9.8]
+        const tables = [
+          [8.0, -9.8],
+          [10.2, -9.8],
+          [12.4, -9.8],
+        ];
+        tables.forEach(([tx, tz]) => {
+          const dx = camera.position.x - tx;
+          const dz = camera.position.z - tz;
+          const dist = Math.hypot(dx, dz);
+          const minDist = 0.85;
+          if (dist < minDist && dist > 0.001) {
+            const push = (minDist - dist) / dist;
+            camera.position.x += dx * push;
+            camera.position.z += dz * push;
+          }
+        });
+
+        // Front Order Counter Collision at [8.0, 0, -12.4]
+        if (
+          Math.abs(camera.position.x - 8.0) < 1.55 &&
+          Math.abs(camera.position.z - -12.4) < 0.5
+        ) {
+          if (camera.position.z > -12.4) camera.position.z = -11.85;
+          else camera.position.z = -12.95;
+        }
+      }
+
+      // ─── 5. INSIDE CENTRAL MUSEUM GALLERY (x between -5.6 and 5.6) ───
+      else {
+        camera.position.z = Math.max(-16.2, camera.position.z); // North back wall
+
+        // Solid walls outside archways
+        if (!isInArchwayZ) {
+          camera.position.x = Math.max(-5.2, camera.position.x);
+          camera.position.x = Math.min(5.2, camera.position.x);
         }
 
         // Archway to Living Room at z = -7.0
@@ -324,13 +399,13 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
           camera.position.z = Math.min(-7.48, camera.position.z);
         }
 
-        // Museum Pedestal Collisions (Radius 0.95m keeps player perfectly framed without getting too close)
+        // Museum Pedestal Collisions
         museumProjects.forEach((p) => {
           const [px, , pz] = p.position;
           const dx = camera.position.x - px;
           const dz = camera.position.z - pz;
           const dist = Math.hypot(dx, dz);
-          const minDist = 0.95; // Spacious stop so artifacts are viewed in full context
+          const minDist = 0.95;
           if (dist < minDist && dist > 0.001) {
             const push = (minDist - dist) / dist;
             camera.position.x += dx * push;
@@ -363,6 +438,8 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
       setPlayerZone("living-room");
     } else if (camera.position.x < -5.4) {
       setPlayerZone("clinic");
+    } else if (camera.position.x > 5.4) {
+      setPlayerZone("menutopia");
     } else {
       setPlayerZone("museum");
     }

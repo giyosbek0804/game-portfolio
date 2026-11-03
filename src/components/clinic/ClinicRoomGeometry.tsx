@@ -9,6 +9,7 @@ import { TicketKiosk } from "./TicketKiosk";
 import { ClinicDoctorFigure } from "./ClinicDoctorFigure";
 import { ClinicDummyPatient } from "./ClinicDummyPatient";
 import { useClinicQueueStore } from "@/store/useClinicQueueStore";
+import { useGameStore } from "@/store/useGameStore";
 
 export const ClinicRoomGeometry: React.FC = () => {
   const patients = useClinicQueueStore((state) => state.patients);
@@ -20,6 +21,8 @@ export const ClinicRoomGeometry: React.FC = () => {
 
   // Drive queue state machine and detect if player entered doctor office
   useFrame((state, delta) => {
+    const playerZone = useGameStore.getState().playerZone;
+    if (playerZone !== "clinic" && playerZone !== "museum") return;
     tickSimulation(delta);
 
     if (userTicketStatus === "called") {

@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { useGameStore } from "@/store/useGameStore";
 import { useClinicQueueStore } from "@/store/useClinicQueueStore";
+import { useMenutopiaStore } from "@/store/useMenutopiaStore";
 import { InteractionHint } from "./InteractionHint";
 import { ProjectModal } from "./ProjectModal";
 import { RotatePrompt } from "./RotatePrompt";
@@ -37,6 +38,7 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
   const userTicketStatus = useClinicQueueStore((state) => state.userTicketStatus);
   const isUserTurn = useClinicQueueStore((state) => state.isUserTurn);
   const currentTicket = useClinicQueueStore((state) => state.currentTicket);
+  const playerOrder = useMenutopiaStore((state) => state.playerOrder);
 
   const isOutside = playerZone === "outside";
 
@@ -65,6 +67,10 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
       useGameStore.getState().interactWithVisitor(targetedInteractable.id);
     } else if (targetedInteractable.type === "kiosk") {
       useClinicQueueStore.getState().takeUserTicket();
+    } else if (targetedInteractable.type === "restaurant-kiosk") {
+      useMenutopiaStore.getState().placePlayerOrder();
+    } else if (targetedInteractable.type === "pickup-counter") {
+      useMenutopiaStore.getState().pickupPlayerOrder();
     }
   };
 
@@ -75,6 +81,8 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
       ? "Living Room"
       : playerZone === "clinic"
       ? "Navbat Clinic"
+      : playerZone === "menutopia"
+      ? "Menutopia Restaurant & Kitchen"
       : "Museum Gallery";
 
   return (
@@ -120,6 +128,53 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
                 ) : (
                   <span className="text-stone-300">
                     Waiting in queue... (Serving: {currentTicket})
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        </aside>
+      )}
+
+      {/* Menutopia Restaurant Order Badge Pinned at Screen Edge */}
+      {playerOrder && (
+        <aside
+          aria-label="Menutopia Food Order"
+          className={`fixed right-3 sm:right-6 z-40 pointer-events-auto animate-in fade-in slide-in-from-right-4 duration-300 ${
+            userTicket ? "top-32" : "top-16"
+          }`}
+        >
+          <div
+            className={`px-3.5 py-2.5 rounded-2xl backdrop-blur-xl border shadow-2xl flex items-center gap-3 transition-all ${
+              playerOrder.status === "ready"
+                ? "bg-emerald-950/95 border-emerald-400 ring-2 ring-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.5)] animate-pulse"
+                : "bg-stone-900/90 border-red-500/60"
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 to-amber-600 flex items-center justify-center text-lg shadow-md border border-amber-200/50">
+              🍔
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-mono font-bold tracking-wider text-amber-300">
+                  {playerOrder.orderNumber}
+                </span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-red-500/20 text-red-200 border border-red-400/40">
+                  {playerOrder.status.toUpperCase()}
+                </span>
+              </div>
+              <p className="text-[11px] font-medium text-stone-200 mt-0.5">
+                {playerOrder.status === "ready" ? (
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span>🔔</span> ORDER READY! Pick up at Counter
+                  </span>
+                ) : playerOrder.status === "served" ? (
+                  <span className="text-amber-300 font-bold flex items-center gap-1">
+                    <span>🍽️</span> ORDER COLLECTED! Enjoy your meal!
+                  </span>
+                ) : (
+                  <span className="text-amber-200">
+                    Kitchen: {playerOrder.item}
                   </span>
                 )}
               </p>

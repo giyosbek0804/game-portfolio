@@ -226,6 +226,10 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
                 ? "👋"
                 : targetedInteractable.type === "kiosk"
                 ? "🎫"
+                : targetedInteractable.type === "restaurant-kiosk"
+                ? "🍔"
+                : targetedInteractable.type === "pickup-counter"
+                ? "🍽️"
                 : "🔍"}
             </span>
             <span className="text-[10px] uppercase font-mono tracking-wider mt-0.5 font-extrabold">
@@ -235,6 +239,10 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
                 ? "Talk"
                 : targetedInteractable.type === "kiosk"
                 ? "Ticket"
+                : targetedInteractable.type === "restaurant-kiosk"
+                ? "Order"
+                : targetedInteractable.type === "pickup-counter"
+                ? "Collect"
                 : "Tap"}
             </span>
           </button>

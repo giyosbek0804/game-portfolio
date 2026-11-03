@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useClinicQueueStore } from "@/store/useClinicQueueStore";
+import { useGameStore } from "@/store/useGameStore";
 
 export const ClinicDoctorFigure: React.FC = () => {
   const groupRef = useRef<THREE.Group>(null);
@@ -22,6 +23,8 @@ export const ClinicDoctorFigure: React.FC = () => {
 
   useFrame((state, delta) => {
     if (!groupRef.current) return;
+    const playerZone = useGameStore.getState().playerZone;
+    if (playerZone !== "clinic") return;
 
     const time = state.clock.elapsedTime;
     const isHandingPaper = consultationRemaining <= 3.0 && consultationRemaining > 0 && !isUserTurn;
