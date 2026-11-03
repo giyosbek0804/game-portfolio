@@ -7,14 +7,26 @@
   --foreground: #f8fafc;
 }
 
+html,
 body {
   color: var(--foreground);
   background: var(--background);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, Cantarell, sans-serif;
-  overflow-x: hidden;
+  overflow: hidden;
+  overscroll-behavior: none;
   margin: 0;
   padding: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Prevent mobile pull-to-refresh or page bouncing inside 3D viewport */
+canvas {
+  touch-action: none;
 }
 
 /* Accessible focus outline */

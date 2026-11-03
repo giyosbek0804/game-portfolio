@@ -2,6 +2,7 @@
 
 import React, { useState, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
+import { useGameStore } from "@/store/useGameStore";
 import { RoomGeometry } from "./RoomGeometry";
 import { RoomLights } from "./RoomLights";
 import { FirstPersonCamera } from "./FirstPersonCamera";
@@ -28,19 +29,33 @@ export const RoomScene: React.FC = () => {
     setMobileLookDelta({ x: deltaX, y: deltaY });
   }, []);
 
+  const handleMobileAction = useCallback(() => {
+    const target = useGameStore.getState().targetedInteractable;
+    if (!target) return;
+
+    if (target.type === "switch") {
+      useGameStore.getState().toggleLight(target.id);
+    } else if (target.type === "door") {
+      useGameStore.getState().toggleDoor();
+    } else if (target.type === "pedestal" && target.data) {
+      useGameStore.getState().setActiveProject(target.data);
+    }
+  }, []);
+
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-stone-950 select-none">
+    <div className="relative w-screen h-screen overflow-hidden bg-stone-950 select-none touch-none">
       {/* HTML HUD Overlay above Canvas */}
       <RoomHUD
         hasInteracted={hasInteracted}
         onDismissHint={markInteracted}
       />
 
-      {/* Mobile Touch Controls (Virtual Joystick + Drag to Look) */}
+      {/* Mobile Touch Controls (Virtual Joystick + Drag to Look + Dedicated Action Button) */}
       <MobileControls
         onMove={setMobileMoveVector}
         onLook={handleMobileLook}
         onInteraction={markInteracted}
+        onAction={handleMobileAction}
       />
 
       {/* R3F 3D Canvas: strictly dpr=[1, 1.5], no shadows, no post-processing */}
@@ -63,7 +78,7 @@ export const RoomScene: React.FC = () => {
           onInteraction={markInteracted}
         />
 
-        {/* Room Architectural Geometry + Paintings + Ceiling Door Switch */}
+        {/* Room Architectural Geometry + Museum Room + Paintings */}
         <RoomGeometry />
 
         {/* Dynamic Lights (Ceiling Lamp + Porch Lantern + Ambient Dimming) */}
