@@ -3,6 +3,7 @@
 import React, { useState, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useGameStore } from "@/store/useGameStore";
+import { useClinicQueueStore } from "@/store/useClinicQueueStore";
 import { RoomGeometry } from "./RoomGeometry";
 import { RoomLights } from "./RoomLights";
 import { FirstPersonCamera } from "./FirstPersonCamera";
@@ -42,6 +43,8 @@ export const RoomScene: React.FC = () => {
       useGameStore.getState().setActiveProject(target.data as any);
     } else if (target.type === "visitor") {
       useGameStore.getState().interactWithVisitor(target.id);
+    } else if (target.type === "kiosk") {
+      useClinicQueueStore.getState().takeUserTicket();
     }
   }, []);
 

@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGameStore } from "@/store/useGameStore";
+import { useClinicQueueStore } from "@/store/useClinicQueueStore";
 import { museumProjects } from "@/config/projectsData";
 import { MobileMoveVector } from "./MobileControls";
 
@@ -269,29 +270,74 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
         camera.position.z = Math.max(-6.52, camera.position.z);
       }
     } else {
-      // MUSEUM GALLERY ROOM
-      camera.position.x = Math.max(-5.3, Math.min(5.3, camera.position.x));
-      camera.position.z = Math.max(-16.2, camera.position.z);
+      // ZONE: MUSEUM GALLERY OR NAVBAT CLINIC WING (z <= -7.0)
+      // Clinic Archway between Museum and Clinic is at x = -5.4, z between -10.2 and -12.8
+      const isInClinicArchway = z >= -12.8 && z <= -10.2;
 
-      // Archway at z = -7.0
-      const isInArchway = Math.abs(x) < 1.3;
-      if (!isInArchway) {
-        camera.position.z = Math.min(-7.48, camera.position.z);
-      }
+      if (x < -5.3) {
+        // ─── PLAYER IS INSIDE NAVBAT CLINIC WING ───
+        camera.position.x = Math.max(-13.4, camera.position.x); // West Wall at -14.0
+        camera.position.z = Math.min(-8.8, camera.position.z);  // North Wall at -8.5
+        camera.position.z = Math.max(-16.8, camera.position.z); // South Wall at -17.2
 
-      // Museum Pedestal Collisions (Radius 0.95m keeps player perfectly framed without getting too close)
-      museumProjects.forEach((p) => {
-        const [px, , pz] = p.position;
-        const dx = camera.position.x - px;
-        const dz = camera.position.z - pz;
-        const dist = Math.hypot(dx, dz);
-        const minDist = 0.95; // Spacious stop so artifacts are viewed in full context
-        if (dist < minDist && dist > 0.001) {
-          const push = (minDist - dist) / dist;
-          camera.position.x += dx * push;
-          camera.position.z += dz * push;
+        // East wall boundary (Archway back to Museum is at x = -5.4)
+        if (camera.position.z > -13.5) {
+          // In Waiting Hall: cannot walk through solid east wall unless in archway
+          if (!isInClinicArchway && camera.position.x > -5.9) {
+            camera.position.x = -5.9;
+          }
+        } else {
+          // In Doctor Office: east wall is at x = -8.0
+          camera.position.x = Math.min(-8.4, camera.position.x);
         }
-      });
+
+        // Dividing Wall between Waiting Hall & Doctor Office at z = -13.5
+        // Doorway is at x = -10.5 (width 1.25m corridor)
+        const doctorDoorOpen = useClinicQueueStore.getState().doctorDoorOpen;
+        const isUserTurn = useClinicQueueStore.getState().isUserTurn;
+        const userTicketStatus = useClinicQueueStore.getState().userTicketStatus;
+        const canPassDoor = doctorDoorOpen || isUserTurn || userTicketStatus === "entered";
+        const isAtDoctorDoorway = Math.abs(camera.position.x - -10.5) < 0.65;
+
+        if (!isAtDoctorDoorway || !canPassDoor) {
+          if (camera.position.z > -13.5) {
+            // In Waiting Hall: stop before hitting dividing wall from North
+            camera.position.z = Math.max(-13.1, camera.position.z);
+          } else {
+            // In Doctor Office: stop before hitting dividing wall from South
+            camera.position.z = Math.min(-13.9, camera.position.z);
+          }
+        }
+      } else {
+        // PLAYER IS INSIDE MUSEUM GALLERY
+        camera.position.x = Math.min(5.3, camera.position.x);
+        camera.position.z = Math.max(-16.2, camera.position.z);
+
+        // West Wall of Museum (x = -5.4) has Clinic Archway at z = -10.3 to -12.7
+        if (!isInClinicArchway) {
+          camera.position.x = Math.max(-5.3, camera.position.x);
+        }
+
+        // Archway to Living Room at z = -7.0
+        const isInLivingArchway = Math.abs(x) < 1.3;
+        if (!isInLivingArchway) {
+          camera.position.z = Math.min(-7.48, camera.position.z);
+        }
+
+        // Museum Pedestal Collisions (Radius 0.95m keeps player perfectly framed without getting too close)
+        museumProjects.forEach((p) => {
+          const [px, , pz] = p.position;
+          const dx = camera.position.x - px;
+          const dz = camera.position.z - pz;
+          const dist = Math.hypot(dx, dz);
+          const minDist = 0.95; // Spacious stop so artifacts are viewed in full context
+          if (dist < minDist && dist > 0.001) {
+            const push = (minDist - dist) / dist;
+            camera.position.x += dx * push;
+            camera.position.z += dz * push;
+          }
+        });
+      }
     }
 
     // Dummy Figure / Visitor Collisions (smooth pushback so player doesn't clip into figures)
@@ -315,6 +361,8 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
       setPlayerZone("outside");
     } else if (camera.position.z <= 0.1 && camera.position.z >= -7.0) {
       setPlayerZone("living-room");
+    } else if (camera.position.x < -5.4) {
+      setPlayerZone("clinic");
     } else {
       setPlayerZone("museum");
     }

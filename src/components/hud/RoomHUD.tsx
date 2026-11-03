@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useGameStore } from "@/store/useGameStore";
+import { useClinicQueueStore } from "@/store/useClinicQueueStore";
 import { InteractionHint } from "./InteractionHint";
 import { ProjectModal } from "./ProjectModal";
 import { RotatePrompt } from "./RotatePrompt";
@@ -32,6 +33,11 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
     (state) => state.toggleVisitorFollow
   );
 
+  const userTicket = useClinicQueueStore((state) => state.userTicket);
+  const userTicketStatus = useClinicQueueStore((state) => state.userTicketStatus);
+  const isUserTurn = useClinicQueueStore((state) => state.isUserTurn);
+  const currentTicket = useClinicQueueStore((state) => state.currentTicket);
+
   const isOutside = playerZone === "outside";
 
   const handleEnterHouse = () => {
@@ -57,6 +63,8 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
       useGameStore.getState().setActiveProject(targetedInteractable.data as any);
     } else if (targetedInteractable.type === "visitor") {
       useGameStore.getState().interactWithVisitor(targetedInteractable.id);
+    } else if (targetedInteractable.type === "kiosk") {
+      useClinicQueueStore.getState().takeUserTicket();
     }
   };
 
@@ -65,6 +73,8 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
       ? "Outside Porch"
       : playerZone === "living-room"
       ? "Living Room"
+      : playerZone === "clinic"
+      ? "Navbat Clinic"
       : "Museum Gallery";
 
   return (
@@ -74,6 +84,49 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
 
       {/* Interactive Glassmorphism Project Modal */}
       <ProjectModal />
+
+      {/* VIP Golden Ticket Badge Pinned at Screen Edge */}
+      {userTicket && (
+        <aside
+          aria-label="VIP Queue Ticket"
+          className="fixed top-16 right-3 sm:right-6 z-40 pointer-events-auto animate-in fade-in slide-in-from-right-4 duration-300"
+        >
+          <div
+            className={`px-3.5 py-2.5 rounded-2xl backdrop-blur-xl border shadow-2xl flex items-center gap-3 transition-all ${
+              isUserTurn
+                ? "bg-amber-950/95 border-amber-400 ring-2 ring-amber-400/60 shadow-[0_0_30px_rgba(251,191,36,0.6)] animate-pulse"
+                : "bg-stone-900/90 border-amber-500/60"
+            }`}
+          >
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-lg shadow-md border border-amber-200/50">
+              🎫
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-mono font-bold tracking-wider text-amber-300">
+                  {userTicket}
+                </span>
+                <span className="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-400/20 text-amber-200 border border-amber-400/40">
+                  VIP Priority
+                </span>
+              </div>
+              <p className="text-[11px] font-medium text-stone-200 mt-0.5">
+                {isUserTurn ? (
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span>🔔</span> YOUR TURN! Enter Doctor's Office
+                  </span>
+                ) : userTicketStatus === "entered" ? (
+                  <span className="text-sky-300">In Doctor's Consultation</span>
+                ) : (
+                  <span className="text-stone-300">
+                    Waiting in queue... (Serving: {currentTicket})
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+        </aside>
+      )}
 
       {/* Visitor Dialogue & Companion Command Overlay */}
       {visitorDialogue && (
@@ -190,6 +243,8 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
                     ? "bg-amber-400 animate-pulse"
                     : playerZone === "living-room"
                     ? "bg-emerald-400"
+                    : playerZone === "clinic"
+                    ? "bg-teal-400 shadow-[0_0_8px_#14b8a6] animate-pulse"
                     : "bg-purple-400 shadow-[0_0_8px_#a855f7]"
                 }`}
               />

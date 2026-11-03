@@ -16,6 +16,7 @@ import { ThreeDoor } from "./ThreeDoor";
 import { PaintingFrame } from "./PaintingFrame";
 import { SingleWallSwitch } from "./SingleWallSwitch";
 import { MuseumPedestal } from "./MuseumPedestal";
+import { ClinicRoomGeometry } from "@/components/clinic/ClinicRoomGeometry";
 
 export const RoomGeometry: React.FC = () => {
   // Procedural textures
@@ -357,14 +358,58 @@ export const RoomGeometry: React.FC = () => {
         <planeGeometry args={[museumD, museumH]} />
       </mesh>
 
-      {/* Museum West Wall (x = -6) */}
+      {/* Museum West Wall (x = -6) with Opening into Navbat Clinic Wing (z = -10.3 to -12.7) */}
+      {/* Segment 1: South of archway (z from -7.0 to -10.3) */}
       <mesh
-        position={[-museumW / 2, museumH / 2, -roomD - museumD / 2]}
+        position={[-museumW / 2, museumH / 2, -8.65]}
         rotation={[0, Math.PI / 2, 0]}
         material={interiorWallMat}
       >
-        <planeGeometry args={[museumD, museumH]} />
+        <planeGeometry args={[3.3, museumH]} />
       </mesh>
+
+      {/* Segment 2: North of archway (z from -12.7 to -17.0) */}
+      <mesh
+        position={[-museumW / 2, museumH / 2, -14.85]}
+        rotation={[0, Math.PI / 2, 0]}
+        material={interiorWallMat}
+      >
+        <planeGeometry args={[4.3, museumH]} />
+      </mesh>
+
+      {/* Segment 3: Above archway (from y = 2.8 to 3.8) */}
+      <mesh
+        position={[-museumW / 2, 3.3, -11.5]}
+        rotation={[0, Math.PI / 2, 0]}
+        material={interiorWallMat}
+      >
+        <planeGeometry args={[2.4, 1.0]} />
+      </mesh>
+
+      {/* Clinic Wing Architectural Archway Trim & Sign in Museum */}
+      <group position={[-museumW / 2 + 0.02, 0, -11.5]}>
+        {/* Left Pillar Trim */}
+        <mesh position={[0, 1.4, 1.2]} material={archMoldingMat}>
+          <boxGeometry args={[0.08, 2.8, 0.12]} />
+        </mesh>
+        {/* Right Pillar Trim */}
+        <mesh position={[0, 1.4, -1.2]} material={archMoldingMat}>
+          <boxGeometry args={[0.08, 2.8, 0.12]} />
+        </mesh>
+        {/* Header Trim */}
+        <mesh position={[0, 2.85, 0]} material={archMoldingMat}>
+          <boxGeometry args={[0.08, 0.12, 2.52]} />
+        </mesh>
+        {/* Illuminated Clinic Sign Plaque */}
+        <mesh position={[0.01, 3.02, 0]}>
+          <boxGeometry args={[0.03, 0.22, 2.2]} />
+          <meshStandardMaterial
+            color="#0f766e"
+            emissive="#0d9488"
+            emissiveIntensity={0.5}
+          />
+        </mesh>
+      </group>
 
       {/* Grand Centerpiece Painting on Museum Far Back Wall */}
       <PaintingFrame
@@ -446,6 +491,11 @@ export const RoomGeometry: React.FC = () => {
           );
         })}
       </group>
+
+      {/* ─────────────────────────────────────────────────────────────
+          6. NAVBAT CLINIC WAITING HALL & DOCTOR'S OFFICE
+          ───────────────────────────────────────────────────────────── */}
+      <ClinicRoomGeometry />
     </group>
   );
 };

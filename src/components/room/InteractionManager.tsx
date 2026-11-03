@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGameStore, TargetedInteractable } from "@/store/useGameStore";
+import { useClinicQueueStore } from "@/store/useClinicQueueStore";
 import { ProjectItem } from "@/config/projectsData";
 
 const MAX_INTERACT_DISTANCE = 3.8; // Comfortable interaction reach (~3.8 units)
@@ -47,7 +48,7 @@ export const InteractionManager: React.FC = () => {
       let obj: THREE.Object3D | null = hit.object;
       while (obj && obj !== scene) {
         if (obj.userData?.isInteractable) {
-          const type = obj.userData.type as "switch" | "door" | "pedestal" | "visitor";
+          const type = obj.userData.type as "switch" | "door" | "pedestal" | "visitor" | "kiosk";
           const id = obj.userData.id as string;
           const name = obj.userData.name as string;
           const data = obj.userData.data as ProjectItem | undefined;
@@ -57,6 +58,7 @@ export const InteractionManager: React.FC = () => {
           else if (type === "door") actionText = "Open / Close Door";
           else if (type === "pedestal") actionText = `Inspect: ${name}`;
           else if (type === "visitor") actionText = `Talk to ${name}`;
+          else if (type === "kiosk") actionText = "Get Golden VIP Ticket";
 
           foundTarget = { type, id, name, actionText, data };
           break;
@@ -90,6 +92,8 @@ export const InteractionManager: React.FC = () => {
         setActiveProject(target.data as ProjectItem);
       } else if (target.type === "visitor") {
         useGameStore.getState().interactWithVisitor(target.id);
+      } else if (target.type === "kiosk") {
+        useClinicQueueStore.getState().takeUserTicket();
       }
     };
 
