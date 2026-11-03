@@ -1,0 +1,79 @@
+/* CSS Custom Properties for textures & house materials */
+:root {
+  --wall-color: #2b333e;
+  --wall-texture: none; /* Can be replaced with url('/textures/wall.webp') */
+  --wall-pattern: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px,
+    transparent 32px
+  );
+  --door-frame-color: #1a1e24;
+  --door-color: #5c3419;
+  --door-texture: none; /* Can be replaced with url('/textures/door.webp') */
+  --door-wood-grain: repeating-linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.15) 0px,
+    rgba(0, 0, 0, 0.15) 4px,
+    transparent 4px,
+    transparent 18px
+  );
+  --door-handle-color: #f59e0b;
+  --porch-light: rgba(245, 158, 11, 0.2);
+}
+
+/* 3D Perspective Container for Doorway */
+.perspective-container {
+  perspective: 1200px;
+  perspective-origin: center center;
+}
+
+/* Door hinge & 3D rotation */
+.door-panel {
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  will-change: transform;
+}
+
+.door-panel.door-open {
+  transform: rotateY(-110deg);
+}
+
+/* Phase 2: Zoom through doorway effect */
+.transition-zoom-container {
+  transform-origin: center 58%;
+  transition: transform 1.2s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  will-change: transform;
+}
+
+.transition-zoom-container.zooming {
+  transform: scale(2.8);
+}
+
+/* Fade out to dark/warm indoor ambiance */
+.transition-fade-screen {
+  opacity: 0;
+  transition: opacity 0.7s ease-in-out;
+  pointer-events: none;
+}
+
+.transition-fade-screen.fading {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .door-panel {
+    transition: none;
+  }
+  .transition-zoom-container {
+    transition: none !important;
+    transform: none !important;
+  }
+  .transition-fade-screen {
+    transition: none !important;
+  }
+}
