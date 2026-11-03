@@ -604,6 +604,9 @@ video {
 .top-0 {
   top: 0px;
 }
+.top-16 {
+  top: 4rem;
+}
 .top-2\.5 {
   top: 0.625rem;
 }
@@ -621,6 +624,9 @@ video {
 }
 .z-30 {
   z-index: 30;
+}
+.z-40 {
+  z-index: 40;
 }
 .z-50 {
   z-index: 50;
@@ -700,6 +706,9 @@ video {
 .h-12 {
   height: 3rem;
 }
+.h-14 {
+  height: 3.5rem;
+}
 .h-16 {
   height: 4rem;
 }
@@ -733,6 +742,9 @@ video {
 .h-6 {
   height: 1.5rem;
 }
+.h-7 {
+  height: 1.75rem;
+}
 .h-8 {
   height: 2rem;
 }
@@ -762,6 +774,9 @@ video {
 }
 .w-12 {
   width: 3rem;
+}
+.w-14 {
+  width: 3.5rem;
 }
 .w-16 {
   width: 4rem;
@@ -796,6 +811,9 @@ video {
 .w-64 {
   width: 16rem;
 }
+.w-7 {
+  width: 1.75rem;
+}
 .w-8 {
   width: 2rem;
 }
@@ -804,6 +822,9 @@ video {
 }
 .w-\[104\%\] {
   width: 104%;
+}
+.w-\[92\%\] {
+  width: 92%;
 }
 .w-full {
   width: 100%;
@@ -825,6 +846,9 @@ video {
 }
 .max-w-md {
   max-width: 28rem;
+}
+.max-w-sm {
+  max-width: 24rem;
 }
 .max-w-xl {
   max-width: 36rem;
@@ -851,6 +875,9 @@ video {
 .transform {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
+.animate-\[rotatePhone_2\.4s_ease-in-out_infinite\] {
+  animation: rotatePhone 2.4s ease-in-out infinite;
+}
 @keyframes bounce {
 
   0%, 100% {
@@ -865,6 +892,16 @@ video {
 }
 .animate-bounce {
   animation: bounce 1s infinite;
+}
+@keyframes ping {
+
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+.animate-ping {
+  animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 @keyframes pulse {
 
@@ -903,6 +940,9 @@ video {
      -moz-user-select: auto;
           user-select: auto;
 }
+.resize {
+  resize: both;
+}
 .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }
@@ -935,6 +975,9 @@ video {
 }
 .gap-2 {
   gap: 0.5rem;
+}
+.gap-2\.5 {
+  gap: 0.625rem;
 }
 .gap-3 {
   gap: 0.75rem;
@@ -1075,6 +1118,9 @@ video {
 .border-amber-400\/70 {
   border-color: rgb(251 191 36 / 0.7);
 }
+.border-amber-400\/80 {
+  border-color: rgb(251 191 36 / 0.8);
+}
 .border-amber-500\/20 {
   border-color: rgb(245 158 11 / 0.2);
 }
@@ -1092,6 +1138,9 @@ video {
 }
 .border-black\/40 {
   border-color: rgb(0 0 0 / 0.4);
+}
+.border-sky-400\/50 {
+  border-color: rgb(56 189 248 / 0.5);
 }
 .border-stone-600\/50 {
   border-color: rgb(87 83 78 / 0.5);
@@ -1142,6 +1191,12 @@ video {
 .bg-amber-500\/10 {
   background-color: rgb(245 158 11 / 0.1);
 }
+.bg-amber-500\/15 {
+  background-color: rgb(245 158 11 / 0.15);
+}
+.bg-amber-500\/20 {
+  background-color: rgb(245 158 11 / 0.2);
+}
 .bg-amber-500\/25 {
   background-color: rgb(245 158 11 / 0.25);
 }
@@ -1165,6 +1220,9 @@ video {
 .bg-purple-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(192 132 252 / var(--tw-bg-opacity, 1));
+}
+.bg-sky-500\/20 {
+  background-color: rgb(14 165 233 / 0.2);
 }
 .bg-slate-950 {
   --tw-bg-opacity: 1;
@@ -1215,6 +1273,9 @@ video {
 }
 .bg-stone-950\/25 {
   background-color: rgb(12 10 9 / 0.25);
+}
+.bg-stone-950\/90 {
+  background-color: rgb(12 10 9 / 0.9);
 }
 .bg-white\/20 {
   background-color: rgb(255 255 255 / 0.2);
@@ -1407,6 +1468,9 @@ video {
 .pr-2 {
   padding-right: 0.5rem;
 }
+.pt-1 {
+  padding-top: 0.25rem;
+}
 .pt-12 {
   padding-top: 3rem;
 }
@@ -1422,9 +1486,16 @@ video {
 .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+.font-sans {
+  font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+}
 .text-2xl {
   font-size: 1.5rem;
   line-height: 2rem;
+}
+.text-3xl {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
 }
 .text-4xl {
   font-size: 2.25rem;
@@ -1507,6 +1578,10 @@ video {
 .text-amber-500 {
   --tw-text-opacity: 1;
   color: rgb(245 158 11 / var(--tw-text-opacity, 1));
+}
+.text-sky-300 {
+  --tw-text-opacity: 1;
+  color: rgb(125 211 252 / var(--tw-text-opacity, 1));
 }
 .text-slate-100 {
   --tw-text-opacity: 1;
@@ -1753,6 +1828,12 @@ a:focus-visible {
 .hover\:bg-amber-500:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(245 158 11 / var(--tw-bg-opacity, 1));
+}
+.hover\:bg-amber-500\/30:hover {
+  background-color: rgb(245 158 11 / 0.3);
+}
+.hover\:bg-sky-500\/30:hover {
+  background-color: rgb(14 165 233 / 0.3);
 }
 .hover\:bg-stone-700:hover {
   --tw-bg-opacity: 1;

@@ -47,7 +47,7 @@ export const InteractionManager: React.FC = () => {
       let obj: THREE.Object3D | null = hit.object;
       while (obj && obj !== scene) {
         if (obj.userData?.isInteractable) {
-          const type = obj.userData.type as "switch" | "door" | "pedestal";
+          const type = obj.userData.type as "switch" | "door" | "pedestal" | "visitor";
           const id = obj.userData.id as string;
           const name = obj.userData.name as string;
           const data = obj.userData.data as ProjectItem | undefined;
@@ -56,6 +56,7 @@ export const InteractionManager: React.FC = () => {
           if (type === "switch") actionText = `Toggle ${name}`;
           else if (type === "door") actionText = "Open / Close Door";
           else if (type === "pedestal") actionText = `Inspect: ${name}`;
+          else if (type === "visitor") actionText = `Talk to ${name}`;
 
           foundTarget = { type, id, name, actionText, data };
           break;
@@ -86,7 +87,9 @@ export const InteractionManager: React.FC = () => {
       } else if (target.type === "door") {
         toggleDoor();
       } else if (target.type === "pedestal" && target.data) {
-        setActiveProject(target.data);
+        setActiveProject(target.data as ProjectItem);
+      } else if (target.type === "visitor") {
+        useGameStore.getState().interactWithVisitor(target.id);
       }
     };
 

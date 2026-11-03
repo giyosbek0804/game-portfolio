@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useGameStore } from "@/store/useGameStore";
 import { InteractionHint } from "./InteractionHint";
 import { ProjectModal } from "./ProjectModal";
+import { RotatePrompt } from "./RotatePrompt";
 
 interface RoomHUDProps {
   hasInteracted: boolean;
@@ -22,6 +23,13 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
   const lights = useGameStore((state) => state.lights);
   const targetedInteractable = useGameStore(
     (state) => state.targetedInteractable
+  );
+  const visitorDialogue = useGameStore((state) => state.visitorDialogue);
+  const dismissVisitorDialogue = useGameStore(
+    (state) => state.dismissVisitorDialogue
+  );
+  const toggleVisitorFollow = useGameStore(
+    (state) => state.toggleVisitorFollow
   );
 
   const isOutside = playerZone === "outside";
@@ -46,7 +54,9 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
       targetedInteractable.type === "pedestal" &&
       targetedInteractable.data
     ) {
-      useGameStore.getState().setActiveProject(targetedInteractable.data);
+      useGameStore.getState().setActiveProject(targetedInteractable.data as any);
+    } else if (targetedInteractable.type === "visitor") {
+      useGameStore.getState().interactWithVisitor(targetedInteractable.id);
     }
   };
 
@@ -59,8 +69,78 @@ export const RoomHUD: React.FC<RoomHUDProps> = ({
 
   return (
     <>
+      {/* Mobile Orientation Request Prompt (Portrait -> Landscape) */}
+      <RotatePrompt />
+
       {/* Interactive Glassmorphism Project Modal */}
       <ProjectModal />
+
+      {/* Visitor Dialogue & Companion Command Overlay */}
+      {visitorDialogue && (
+        <aside
+          aria-label="Visitor Dialogue"
+          className="fixed top-16 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-sm pointer-events-auto animate-in fade-in slide-in-from-top-4 duration-200"
+        >
+          <div className="bg-stone-900/95 backdrop-blur-xl border border-stone-700/80 rounded-2xl p-4 shadow-2xl text-stone-200 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-stone-950 text-xs shadow-md"
+                  style={{ backgroundColor: visitorDialogue.color }}
+                >
+                  {visitorDialogue.name[0]}
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold tracking-wide text-white">
+                    {visitorDialogue.name}
+                  </h4>
+                  <p className="text-[10px] text-stone-400 font-medium">
+                    {visitorDialogue.role}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={dismissVisitorDialogue}
+                className="w-6 h-6 rounded-full bg-stone-800/80 hover:bg-stone-700 text-stone-400 hover:text-white flex items-center justify-center text-xs transition-colors"
+                aria-label="Close dialogue"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs leading-relaxed text-stone-300 font-sans italic">
+              &ldquo;{visitorDialogue.message}&rdquo;
+            </p>
+
+            <div className="flex items-center gap-2 pt-1 border-t border-stone-800/80">
+              <button
+                type="button"
+                onClick={() => toggleVisitorFollow(visitorDialogue.visitorId)}
+                className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 shadow ${
+                  visitorDialogue.isFollowing
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-400/50 hover:bg-amber-500/30"
+                    : "bg-sky-500/20 text-sky-300 border border-sky-400/50 hover:bg-sky-500/30"
+                }`}
+              >
+                <span>{visitorDialogue.isFollowing ? "🛑" : "🚶"}</span>
+                <span>
+                  {visitorDialogue.isFollowing
+                    ? "Stop Following"
+                    : "Command: Follow Me"}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={dismissVisitorDialogue}
+                className="py-1.5 px-3 rounded-xl text-xs font-medium bg-stone-800 hover:bg-stone-700 text-stone-300 border border-stone-700/60 transition-colors"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </aside>
+      )}
 
       <div className="fixed inset-0 pointer-events-none z-30 flex flex-col justify-between p-3 sm:p-6 select-none">
         {/* Top Bar: Navigation & Zone Indicator */}

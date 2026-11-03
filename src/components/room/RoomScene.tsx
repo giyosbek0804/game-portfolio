@@ -7,6 +7,7 @@ import { RoomGeometry } from "./RoomGeometry";
 import { RoomLights } from "./RoomLights";
 import { FirstPersonCamera } from "./FirstPersonCamera";
 import { InteractionManager } from "./InteractionManager";
+import { MuseumVisitors } from "./MuseumVisitors";
 import { MobileControls, MobileMoveVector } from "./MobileControls";
 import { RoomHUD } from "@/components/hud/RoomHUD";
 
@@ -38,7 +39,9 @@ export const RoomScene: React.FC = () => {
     } else if (target.type === "door") {
       useGameStore.getState().toggleDoor();
     } else if (target.type === "pedestal" && target.data) {
-      useGameStore.getState().setActiveProject(target.data);
+      useGameStore.getState().setActiveProject(target.data as any);
+    } else if (target.type === "visitor") {
+      useGameStore.getState().interactWithVisitor(target.id);
     }
   }, []);
 
@@ -58,9 +61,15 @@ export const RoomScene: React.FC = () => {
         onAction={handleMobileAction}
       />
 
-      {/* R3F 3D Canvas: strictly dpr=[1, 1.5], no shadows, no post-processing */}
+      {/* R3F 3D Canvas: Wide 82 FOV for natural spacious peripheral vision, no shadows, no post-processing */}
       <Canvas
         dpr={[1, 1.5]}
+        camera={{
+          fov: 82,
+          near: 0.1,
+          far: 100,
+          position: [0, 1.6, 5.0],
+        }}
         shadows={false}
         gl={{
           antialias: true,
@@ -68,10 +77,10 @@ export const RoomScene: React.FC = () => {
         }}
         className="w-full h-full block"
       >
-        {/* Interaction raycaster manager (targets switches & door up to 3.8m) */}
+        {/* Interaction raycaster manager (targets switches, door & pedestals up to 3.8m) */}
         <InteractionManager />
 
-        {/* First Person FPS Camera with Bounds Clamping */}
+        {/* First Person FPS Camera with Bounds Clamping & Wide Spacing */}
         <FirstPersonCamera
           mobileMoveVector={mobileMoveVector}
           mobileLookDelta={mobileLookDelta}
@@ -80,6 +89,9 @@ export const RoomScene: React.FC = () => {
 
         {/* Room Architectural Geometry + Museum Room + Paintings */}
         <RoomGeometry />
+
+        {/* Autonomous & Interactive Dummy Visitors */}
+        <MuseumVisitors />
 
         {/* Dynamic Lights (Ceiling Lamp + Porch Lantern + Ambient Dimming) */}
         <RoomLights />

@@ -53,13 +53,36 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
   const forwardVector = useRef(new THREE.Vector3());
   const rightVector = useRef(new THREE.Vector3());
 
-  // Spawn outside on porch
+  // Wide, comfortable Human FOV to prevent feeling cramped or too close
   useEffect(() => {
-    camera.position.set(0, PLAYER_HEIGHT, 4.5);
+    const updateCameraFOV = () => {
+      if (camera instanceof THREE.PerspectiveCamera) {
+        const isPortrait = window.innerHeight > window.innerWidth;
+        // Wide 82deg FOV for landscape/desktop; 86deg if in portrait so objects never feel claustrophobic
+        camera.fov = isPortrait ? 86 : 82;
+        camera.near = 0.1;
+        camera.far = 100;
+        camera.updateProjectionMatrix();
+      }
+    };
+
+    updateCameraFOV();
+    window.addEventListener("resize", updateCameraFOV);
+    window.addEventListener("orientationchange", updateCameraFOV);
+
+    return () => {
+      window.removeEventListener("resize", updateCameraFOV);
+      window.removeEventListener("orientationchange", updateCameraFOV);
+    };
+  }, [camera]);
+
+  // Initial Spawn outside on the stone porch with a spacious view
+  useEffect(() => {
+    camera.position.set(0, PLAYER_HEIGHT, 5.0);
     camera.rotation.order = "YXZ";
   }, [camera]);
 
-  // Pointer Lock handling
+  // Pointer Lock handling (Desktop)
   useEffect(() => {
     const canvas = gl.domElement;
 
@@ -71,7 +94,6 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      // If project modal is open or pointer lock not held, ignore mouse look
       if (!isPointerLocked.current || activeProject) return;
 
       onInteraction();
@@ -100,7 +122,7 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
   // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (activeProject) return; // Don't move while modal is open
+      if (activeProject) return;
 
       switch (e.code) {
         case "KeyW":
@@ -167,15 +189,15 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
     }
   }, [mobileLookDelta, onInteraction, activeProject]);
 
-  // Game loop
+  // Game loop update
   useFrame((_, delta) => {
     // 1. Camera Rotation
     euler.current.set(pitch.current, yaw.current, 0, "YXZ");
     camera.quaternion.setFromEuler(euler.current);
 
-    if (activeProject) return; // Pause movement during active modal
+    if (activeProject) return; // Freeze movement while inspecting project modal
 
-    // 2. Automated Walk Target (e.g. glide across doorway threshold)
+    // 2. Automated Walk Target (smooth walk across thresholds)
     if (walkTarget) {
       const targetVec = new THREE.Vector3(...walkTarget);
       const dist = camera.position.distanceTo(targetVec);
@@ -218,52 +240,52 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
       }
     }
 
-    // 4. Multi-Zone Bounds Clamping: Porch -> Room 1 -> Museum Gallery
+    // 4. Multi-Zone Bounds Clamping with comfortable spacing
     const z = camera.position.z;
     const x = camera.position.x;
 
     if (z > 0) {
-      // OUTSIDE PORCH (z from 0 to 6.2, x in [-3.8, 3.8])
+      // OUTSIDE PORCH (comfortable boundaries)
       camera.position.x = Math.max(-3.8, Math.min(3.8, camera.position.x));
-      camera.position.z = Math.min(6.2, camera.position.z);
+      camera.position.z = Math.min(6.0, camera.position.z);
 
       const isInFrontDoorway = Math.abs(x) < 0.62 && doorOpen;
       if (!isInFrontDoorway) {
-        camera.position.z = Math.max(0.35, camera.position.z);
+        camera.position.z = Math.max(0.48, camera.position.z); // Comfortable stop before front wall
       }
     } else if (z <= 0 && z >= -7.0) {
-      // ROOM 1 (LIVING ROOM: z from -7.0 to 0, x in [-4.4, 4.4])
-      camera.position.x = Math.max(-4.4, Math.min(4.4, camera.position.x));
+      // ROOM 1: LIVING ROOM
+      camera.position.x = Math.max(-4.3, Math.min(4.3, camera.position.x));
 
-      // Dividing wall with front door at z = 0
+      // Front door wall at z = 0
       const isInFrontDoorway = Math.abs(x) < 0.62 && doorOpen;
       if (!isInFrontDoorway) {
-        camera.position.z = Math.min(-0.35, camera.position.z);
+        camera.position.z = Math.min(-0.48, camera.position.z);
       }
 
-      // Dividing wall with grand archway at z = -7.0 (open archway, width 2.4m: Math.abs(x) < 1.25)
-      const isInArchway = Math.abs(x) < 1.25;
+      // Grand archway dividing wall at z = -7.0 (open archway, width 2.6m: Math.abs(x) < 1.3)
+      const isInArchway = Math.abs(x) < 1.3;
       if (!isInArchway) {
-        camera.position.z = Math.max(-6.65, camera.position.z);
+        camera.position.z = Math.max(-6.52, camera.position.z);
       }
     } else {
-      // MUSEUM GALLERY ROOM (z from -16.4 to -7.0, x in [-5.4, 5.4])
-      camera.position.x = Math.max(-5.4, Math.min(5.4, camera.position.x));
-      camera.position.z = Math.max(-16.4, camera.position.z);
+      // MUSEUM GALLERY ROOM
+      camera.position.x = Math.max(-5.3, Math.min(5.3, camera.position.x));
+      camera.position.z = Math.max(-16.2, camera.position.z);
 
       // Archway at z = -7.0
-      const isInArchway = Math.abs(x) < 1.25;
+      const isInArchway = Math.abs(x) < 1.3;
       if (!isInArchway) {
-        camera.position.z = Math.min(-7.35, camera.position.z);
+        camera.position.z = Math.min(-7.48, camera.position.z);
       }
 
-      // Museum Pedestal Collisions (circle radius 0.65m around pedestals)
+      // Museum Pedestal Collisions (Radius 0.95m keeps player perfectly framed without getting too close)
       museumProjects.forEach((p) => {
         const [px, , pz] = p.position;
         const dx = camera.position.x - px;
         const dz = camera.position.z - pz;
         const dist = Math.hypot(dx, dz);
-        const minDist = 0.68;
+        const minDist = 0.95; // Spacious stop so artifacts are viewed in full context
         if (dist < minDist && dist > 0.001) {
           const push = (minDist - dist) / dist;
           camera.position.x += dx * push;
@@ -271,6 +293,20 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
         }
       });
     }
+
+    // Dummy Figure / Visitor Collisions (smooth pushback so player doesn't clip into figures)
+    const visitorPositions = useGameStore.getState().visitorPositions;
+    Object.values(visitorPositions).forEach(([vx, , vz]) => {
+      const dx = camera.position.x - vx;
+      const dz = camera.position.z - vz;
+      const dist = Math.hypot(dx, dz);
+      const minDist = 0.58;
+      if (dist < minDist && dist > 0.001) {
+        const push = (minDist - dist) / dist;
+        camera.position.x += dx * push;
+        camera.position.z += dz * push;
+      }
+    });
 
     camera.position.y = PLAYER_HEIGHT;
 

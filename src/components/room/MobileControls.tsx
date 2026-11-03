@@ -222,10 +222,16 @@ export const MobileControls: React.FC<MobileControlsProps> = ({
                 ? "💡"
                 : targetedInteractable.type === "door"
                 ? "🚪"
+                : targetedInteractable.type === "visitor"
+                ? "👋"
                 : "🔍"}
             </span>
             <span className="text-[10px] uppercase font-mono tracking-wider mt-0.5 font-extrabold">
-              {targetedInteractable.type === "pedestal" ? "Inspect" : "Tap"}
+              {targetedInteractable.type === "pedestal"
+                ? "Inspect"
+                : targetedInteractable.type === "visitor"
+                ? "Talk"
+                : "Tap"}
             </span>
           </button>
         </div>
