@@ -3,7 +3,8 @@
 import React, { useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { useGameStore } from "@/store/useGameStore";
+import { useGameStore, TargetedInteractable } from "@/store/useGameStore";
+import { ProjectItem } from "@/config/projectsData";
 
 const MAX_INTERACT_DISTANCE = 3.8; // Comfortable interaction reach (~3.8 units)
 
@@ -12,33 +13,33 @@ export const InteractionManager: React.FC = () => {
 
   const toggleLight = useGameStore((state) => state.toggleLight);
   const toggleDoor = useGameStore((state) => state.toggleDoor);
+  const setActiveProject = useGameStore((state) => state.setActiveProject);
+  const activeProject = useGameStore((state) => state.activeProject);
   const setTargetedInteractable = useGameStore(
     (state) => state.setTargetedInteractable
   );
 
   const raycaster = useRef(new THREE.Raycaster());
   const centerVec = useRef(new THREE.Vector2(0, 0));
-  const currentTargetRef = useRef<{
-    type: "switch" | "door";
-    id: string;
-    name: string;
-    actionText: string;
-  } | null>(null);
+  const currentTargetRef = useRef<TargetedInteractable | null>(null);
 
   // Per-frame raycasting straight from camera center reticle
   useFrame(() => {
+    // If project modal is open, don't raycast
+    if (activeProject) {
+      if (currentTargetRef.current) {
+        currentTargetRef.current = null;
+        setTargetedInteractable(null);
+      }
+      return;
+    }
+
     raycaster.current.setFromCamera(centerVec.current, camera);
     raycaster.current.far = MAX_INTERACT_DISTANCE;
 
-    // Raycast all meshes in the scene
     const hits = raycaster.current.intersectObjects(scene.children, true);
 
-    let foundTarget: {
-      type: "switch" | "door";
-      id: string;
-      name: string;
-      actionText: string;
-    } | null = null;
+    let foundTarget: TargetedInteractable | null = null;
 
     for (const hit of hits) {
       if (hit.distance > MAX_INTERACT_DISTANCE) continue;
@@ -46,13 +47,17 @@ export const InteractionManager: React.FC = () => {
       let obj: THREE.Object3D | null = hit.object;
       while (obj && obj !== scene) {
         if (obj.userData?.isInteractable) {
-          const type = obj.userData.type as "switch" | "door";
+          const type = obj.userData.type as "switch" | "door" | "pedestal";
           const id = obj.userData.id as string;
           const name = obj.userData.name as string;
-          const actionText =
-            type === "switch" ? `Toggle ${name}` : "Open / Close Door";
+          const data = obj.userData.data as ProjectItem | undefined;
 
-          foundTarget = { type, id, name, actionText };
+          let actionText = "Interact";
+          if (type === "switch") actionText = `Toggle ${name}`;
+          else if (type === "door") actionText = "Open / Close Door";
+          else if (type === "pedestal") actionText = `Inspect: ${name}`;
+
+          foundTarget = { type, id, name, actionText, data };
           break;
         }
         obj = obj.parent;
@@ -74,25 +79,26 @@ export const InteractionManager: React.FC = () => {
   useEffect(() => {
     const triggerInteraction = () => {
       const target = currentTargetRef.current;
-      if (!target) return;
+      if (!target || activeProject) return;
 
       if (target.type === "switch") {
         toggleLight(target.id);
       } else if (target.type === "door") {
         toggleDoor();
+      } else if (target.type === "pedestal" && target.data) {
+        setActiveProject(target.data);
       }
     };
 
-    const handlePointerDown = (e: MouseEvent) => {
-      // If we are aiming at a switch/door within range, activate it
-      if (currentTargetRef.current) {
+    const handlePointerDown = () => {
+      if (currentTargetRef.current && !activeProject) {
         triggerInteraction();
       }
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === "KeyE") {
-        if (currentTargetRef.current) {
+        if (currentTargetRef.current && !activeProject) {
           e.preventDefault();
           triggerInteraction();
         }
@@ -107,7 +113,7 @@ export const InteractionManager: React.FC = () => {
       canvas.removeEventListener("pointerdown", handlePointerDown);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [gl, toggleLight, toggleDoor]);
+  }, [gl, toggleLight, toggleDoor, setActiveProject, activeProject]);
 
   return null;
 };

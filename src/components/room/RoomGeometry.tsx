@@ -11,12 +11,14 @@ import {
   createPaintingTexture2,
   createPaintingTexture3,
 } from "@/utils/textureGenerators";
+import { museumProjects } from "@/config/projectsData";
 import { ThreeDoor } from "./ThreeDoor";
 import { PaintingFrame } from "./PaintingFrame";
 import { SingleWallSwitch } from "./SingleWallSwitch";
+import { MuseumPedestal } from "./MuseumPedestal";
 
 export const RoomGeometry: React.FC = () => {
-  // Generate procedural textures once
+  // Procedural textures
   const woodFloorTexture = useMemo(() => {
     if (typeof window === "undefined") return null;
     return createWoodPlankTexture();
@@ -37,7 +39,6 @@ export const RoomGeometry: React.FC = () => {
     return createInteriorWallTexture();
   }, []);
 
-  // Painting canvas textures
   const paintingTexture1 = useMemo(() => {
     if (typeof window === "undefined") return null;
     return createPaintingTexture1();
@@ -63,6 +64,16 @@ export const RoomGeometry: React.FC = () => {
         metalness: 0.1,
       }),
     [woodFloorTexture]
+  );
+
+  const museumFloorMat = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: "#181a1f", // Dark polished museum stone
+        roughness: 0.35,
+        metalness: 0.25,
+      }),
+    []
   );
 
   const porchMat = useMemo(
@@ -108,34 +119,36 @@ export const RoomGeometry: React.FC = () => {
     []
   );
 
-  const roofMat = useMemo(
+  const archMoldingMat = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: "#1a1e24",
-        roughness: 0.7,
+        color: "#d97706", // Brass architectural arch trim
+        roughness: 0.3,
+        metalness: 0.85,
       }),
     []
   );
 
-  const pillarMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: "#282c35",
-        roughness: 0.7,
-      }),
-    []
-  );
-
-  // House dimensions
+  // Dimensions
   const roomW = 10;
   const roomH = 3.5;
-  const roomD = 7; // Interior extends from z = 0 to z = -7
-  const porchD = 7; // Exterior extends from z = 0 to z = +7
+  const roomD = 7; // Living room: z from 0 to -7
+  const porchD = 7;
+
+  // Museum Room Dimensions
+  const museumW = 12;
+  const museumH = 3.8;
+  const museumD = 10; // Museum: z from -7 to -17
+
+  // Front Entrance Doorway cutout
   const doorW = 1.35;
   const doorH = 2.45;
-  const sideWallW = (roomW - doorW) / 2;
 
-  // Single continuous facade geometry with doorway hole (eliminates light boundary glitch)
+  // Grand Archway cutout between Room 1 & Museum (NO door)
+  const archW = 2.6;
+  const archH = 2.9;
+
+  // Facade wall geometry (z = 0) with door cutout
   const facadeGeo = useMemo(() => {
     const shape = new THREE.Shape();
     shape.moveTo(-roomW / 2, 0);
@@ -155,13 +168,33 @@ export const RoomGeometry: React.FC = () => {
     return new THREE.ShapeGeometry(shape);
   }, [roomW, roomH, doorW, doorH]);
 
+  // Dividing Archway Wall geometry (z = -7) with grand open archway cutout
+  const archWallGeo = useMemo(() => {
+    const shape = new THREE.Shape();
+    shape.moveTo(-museumW / 2, 0);
+    shape.lineTo(museumW / 2, 0);
+    shape.lineTo(museumW / 2, museumH);
+    shape.lineTo(-museumW / 2, museumH);
+    shape.closePath();
+
+    const archHole = new THREE.Path();
+    archHole.moveTo(-archW / 2, 0);
+    archHole.lineTo(archW / 2, 0);
+    archHole.lineTo(archW / 2, archH);
+    archHole.lineTo(-archW / 2, archH);
+    archHole.closePath();
+    shape.holes.push(archHole);
+
+    return new THREE.ShapeGeometry(shape);
+  }, [museumW, museumH, archW, archH]);
+
   return (
-    <group name="house-architecture">
+    <group name="complete-house-architecture">
       {/* ========================================================= */}
-      {/* 1. INTERIOR ROOM (z <= 0)                                 */}
+      {/* 1. ROOM 1: LIVING ROOM (z from 0 to -7)                   */}
       {/* ========================================================= */}
 
-      {/* Interior Floor (Oak Wood Planks) */}
+      {/* Living Room Floor */}
       <mesh
         position={[0, 0, -roomD / 2]}
         rotation={[-Math.PI / 2, 0, 0]}
@@ -170,7 +203,7 @@ export const RoomGeometry: React.FC = () => {
         <planeGeometry args={[roomW, roomD]} />
       </mesh>
 
-      {/* Interior Ceiling */}
+      {/* Living Room Ceiling */}
       <mesh
         position={[0, roomH, -roomD / 2]}
         rotation={[Math.PI / 2, 0, 0]}
@@ -179,12 +212,7 @@ export const RoomGeometry: React.FC = () => {
         <planeGeometry args={[roomW, roomD]} />
       </mesh>
 
-      {/* North Wall (Back wall, z = -roomD) */}
-      <mesh position={[0, roomH / 2, -roomD]} material={interiorWallMat}>
-        <planeGeometry args={[roomW, roomH]} />
-      </mesh>
-
-      {/* East Wall (x = +roomW/2, facing West) */}
+      {/* Living Room East Wall */}
       <mesh
         position={[roomW / 2, roomH / 2, -roomD / 2]}
         rotation={[0, -Math.PI / 2, 0]}
@@ -193,7 +221,7 @@ export const RoomGeometry: React.FC = () => {
         <planeGeometry args={[roomD, roomH]} />
       </mesh>
 
-      {/* West Wall (x = -roomW/2, facing East) */}
+      {/* Living Room West Wall */}
       <mesh
         position={[-roomW / 2, roomH / 2, -roomD / 2]}
         rotation={[0, Math.PI / 2, 0]}
@@ -202,35 +230,7 @@ export const RoomGeometry: React.FC = () => {
         <planeGeometry args={[roomD, roomH]} />
       </mesh>
 
-      {/* Interior Baseboards */}
-      <mesh position={[0, 0.08, -roomD + 0.02]}>
-        <boxGeometry args={[roomW, 0.16, 0.04]} />
-        <meshStandardMaterial color="#141414" roughness={0.7} />
-      </mesh>
-      <mesh position={[-roomW / 2 + 0.02, 0.08, -roomD / 2]}>
-        <boxGeometry args={[0.04, 0.16, roomD]} />
-        <meshStandardMaterial color="#141414" roughness={0.7} />
-      </mesh>
-      <mesh position={[roomW / 2 - 0.02, 0.08, -roomD / 2]}>
-        <boxGeometry args={[0.04, 0.16, roomD]} />
-        <meshStandardMaterial color="#141414" roughness={0.7} />
-      </mesh>
-
-      {/* ========================================================= */}
-      {/* 2. GALLERY PAINTINGS WITH INTEGRATED LIGHTS & SWITCHES    */}
-      {/* ========================================================= */}
-
-      {/* Painting 1: Mounted on North Wall (Back Wall) */}
-      <PaintingFrame
-        lightId="painting-1"
-        title="Cyberpunk"
-        canvasTexture={paintingTexture1}
-        position={[0, 1.85, -roomD + 0.02]}
-        rotation={[0, 0, 0]}
-        switchOffset={[1.35, -0.3, 0]}
-      />
-
-      {/* Painting 2: Mounted on West Wall */}
+      {/* Painting on West Wall (Terrain Shader) */}
       <PaintingFrame
         lightId="painting-2"
         title="Terrain Shader"
@@ -240,7 +240,7 @@ export const RoomGeometry: React.FC = () => {
         switchOffset={[1.35, -0.3, 0]}
       />
 
-      {/* Painting 3: Mounted on East Wall */}
+      {/* Painting on East Wall (Graphics Engine) */}
       <PaintingFrame
         lightId="painting-3"
         title="Graphics Engine"
@@ -250,54 +250,138 @@ export const RoomGeometry: React.FC = () => {
         switchOffset={[1.35, -0.3, 0]}
       />
 
-      {/* ========================================================= */}
-      {/* 3. CONTINUOUS DIVIDING FACADE WALL (ONE MESH, NO SEAMS)   */}
-      {/* ========================================================= */}
-
-      {/* Exterior Facade: Single seamless mesh with doorway cutout */}
+      {/* Front Entrance Facade Wall (z = 0) */}
       <mesh
         geometry={facadeGeo}
         material={exteriorSidingMat}
         position={[0, 0, 0.04]}
       />
-
-      {/* Interior Dividing Wall: Single seamless mesh with doorway cutout */}
       <mesh
         geometry={facadeGeo}
         material={interiorWallMat}
         position={[0, 0, -0.04]}
         rotation={[0, Math.PI, 0]}
       />
-
-      {/* Wall thickness cores */}
-      <mesh position={[-doorW / 2 - sideWallW / 2, roomH / 2, 0]}>
-        <boxGeometry args={[sideWallW, roomH, 0.08]} />
-        <meshStandardMaterial color="#1c1917" />
-      </mesh>
-      <mesh position={[doorW / 2 + sideWallW / 2, roomH / 2, 0]}>
-        <boxGeometry args={[sideWallW, roomH, 0.08]} />
-        <meshStandardMaterial color="#1c1917" />
-      </mesh>
-      <mesh position={[0, doorH + (roomH - doorH) / 2, 0]}>
-        <boxGeometry args={[doorW, roomH - doorH, 0.08]} />
-        <meshStandardMaterial color="#1c1917" />
-      </mesh>
-
-      {/* 3D Hinged Mahogany Door Assembly */}
       <ThreeDoor position={[0, 0, 0]} />
 
-      {/* ========================================================= */}
-      {/* 4. CEILING LIGHT SWITCH PLACED RIGHT BESIDE THE ENTRANCE  */}
-      {/* ========================================================= */}
-      {/* Mounted on the interior dividing wall right next to door jamb at x = 0.95, y = 1.45, z = -0.048 */}
+      {/* Ceiling Light Switch beside entrance door */}
       <group position={[0.95, 1.45, -0.048]} rotation={[0, Math.PI, 0]}>
         <SingleWallSwitch lightId="ceiling" label="Ceiling Light" />
-        {/* Subtle brass label plate above switch */}
         <mesh position={[0, 0.23, 0.005]}>
           <boxGeometry args={[0.2, 0.04, 0.006]} />
           <meshStandardMaterial color="#d97706" metalness={0.8} roughness={0.3} />
         </mesh>
       </group>
+
+      {/* ========================================================= */}
+      {/* 2. GRAND ARCHWAY (Dividing Wall at z = -7, NO DOOR)      */}
+      {/* ========================================================= */}
+
+      {/* Archway Wall facing Living Room (facing +Z) */}
+      <mesh
+        geometry={archWallGeo}
+        material={interiorWallMat}
+        position={[0, 0, -roomD + 0.02]}
+      />
+
+      {/* Archway Wall facing Museum (facing -Z) */}
+      <mesh
+        geometry={archWallGeo}
+        material={interiorWallMat}
+        position={[0, 0, -roomD - 0.02]}
+        rotation={[0, Math.PI, 0]}
+      />
+
+      {/* Brass Architectural Arch Frame & Header Plaque */}
+      <group position={[0, 0, -roomD]}>
+        {/* Left Arch Pillar Trim */}
+        <mesh position={[-archW / 2 - 0.05, archH / 2, 0]} material={archMoldingMat}>
+          <boxGeometry args={[0.1, archH, 0.16]} />
+        </mesh>
+        {/* Right Arch Pillar Trim */}
+        <mesh position={[archW / 2 + 0.05, archH / 2, 0]} material={archMoldingMat}>
+          <boxGeometry args={[0.1, archH, 0.16]} />
+        </mesh>
+        {/* Header Lintel Trim */}
+        <mesh position={[0, archH + 0.05, 0]} material={archMoldingMat}>
+          <boxGeometry args={[archW + 0.2, 0.1, 0.16]} />
+        </mesh>
+
+        {/* Museum Exhibition Plaque above Archway */}
+        <mesh position={[0, archH + 0.26, 0.04]}>
+          <boxGeometry args={[2.0, 0.18, 0.02]} />
+          <meshStandardMaterial color="#1a1e24" roughness={0.5} />
+        </mesh>
+        <mesh position={[0, archH + 0.26, 0.055]}>
+          <boxGeometry args={[1.9, 0.14, 0.008]} />
+          <meshStandardMaterial color="#d97706" metalness={0.9} roughness={0.2} />
+        </mesh>
+      </group>
+
+      {/* ========================================================= */}
+      {/* 3. ROOM 2: MUSEUM EXHIBITION GALLERY (z from -7 to -17)  */}
+      {/* ========================================================= */}
+
+      {/* Museum Polished Dark Stone Floor */}
+      <mesh
+        position={[0, 0, -roomD - museumD / 2]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        material={museumFloorMat}
+      >
+        <planeGeometry args={[museumW, museumD]} />
+      </mesh>
+
+      {/* Museum Ceiling with Recessed Architectural Height (3.8m) */}
+      <mesh
+        position={[0, museumH, -roomD - museumD / 2]}
+        rotation={[Math.PI / 2, 0, 0]}
+        material={ceilingMat}
+      >
+        <planeGeometry args={[museumW, museumD]} />
+      </mesh>
+
+      {/* Museum North Wall (Far Back Wall at z = -17) */}
+      <mesh
+        position={[0, museumH / 2, -roomD - museumD]}
+        material={interiorWallMat}
+      >
+        <planeGeometry args={[museumW, museumH]} />
+      </mesh>
+
+      {/* Museum East Wall (x = +6) */}
+      <mesh
+        position={[museumW / 2, museumH / 2, -roomD - museumD / 2]}
+        rotation={[0, -Math.PI / 2, 0]}
+        material={interiorWallMat}
+      >
+        <planeGeometry args={[museumD, museumH]} />
+      </mesh>
+
+      {/* Museum West Wall (x = -6) */}
+      <mesh
+        position={[-museumW / 2, museumH / 2, -roomD - museumD / 2]}
+        rotation={[0, Math.PI / 2, 0]}
+        material={interiorWallMat}
+      >
+        <planeGeometry args={[museumD, museumH]} />
+      </mesh>
+
+      {/* Grand Centerpiece Painting on Museum Far Back Wall */}
+      <PaintingFrame
+        lightId="painting-1"
+        title="Cyberpunk Metagame"
+        canvasTexture={paintingTexture1}
+        position={[0, 2.0, -roomD - museumD + 0.03]}
+        rotation={[0, 0, 0]}
+        switchOffset={[1.4, -0.35, 0]}
+      />
+
+      {/* ========================================================= */}
+      {/* 4. MUSEUM DISPLAY PEDESTALS / GLASS CONTAINERS            */}
+      {/* ========================================================= */}
+      {museumProjects.map((p) => (
+        <MuseumPedestal key={p.id} project={p} />
+      ))}
 
       {/* ========================================================= */}
       {/* 5. EXTERIOR PORCH & FRONT YARD (z > 0)                    */}
@@ -312,7 +396,7 @@ export const RoomGeometry: React.FC = () => {
         <planeGeometry args={[roomW, porchD]} />
       </mesh>
 
-      {/* Porch Stone Front Steps */}
+      {/* Porch Front Steps */}
       <mesh position={[0, -0.15, porchD]}>
         <boxGeometry args={[roomW + 0.4, 0.28, 0.6]} />
         <meshStandardMaterial color="#181e26" roughness={0.9} />
@@ -322,10 +406,11 @@ export const RoomGeometry: React.FC = () => {
         <meshStandardMaterial color="#11161d" roughness={0.95} />
       </mesh>
 
-      {/* Porch Roof Overhang / Awning */}
+      {/* Porch Roof Overhang */}
       <group position={[0, roomH + 0.15, 2.2]}>
-        <mesh rotation={[0.08, 0, 0]} material={roofMat}>
+        <mesh rotation={[0.08, 0, 0]}>
           <boxGeometry args={[roomW + 0.6, 0.2, 4.6]} />
+          <meshStandardMaterial color="#1a1e24" roughness={0.7} />
         </mesh>
         <mesh position={[0, -0.06, 2.25]}>
           <boxGeometry args={[roomW + 0.7, 0.12, 0.1]} />
@@ -333,12 +418,14 @@ export const RoomGeometry: React.FC = () => {
         </mesh>
       </group>
 
-      {/* Front Architectural Porch Columns */}
-      <mesh position={[-3.8, roomH / 2, 4.2]} material={pillarMat}>
+      {/* Front Porch Columns */}
+      <mesh position={[-3.8, roomH / 2, 4.2]}>
         <boxGeometry args={[0.22, roomH, 0.22]} />
+        <meshStandardMaterial color="#282c35" roughness={0.7} />
       </mesh>
-      <mesh position={[3.8, roomH / 2, 4.2]} material={pillarMat}>
+      <mesh position={[3.8, roomH / 2, 4.2]}>
         <boxGeometry args={[0.22, roomH, 0.22]} />
+        <meshStandardMaterial color="#282c35" roughness={0.7} />
       </mesh>
 
       {/* Starry Night Sky Backdrop */}

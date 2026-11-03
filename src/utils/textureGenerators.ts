@@ -248,6 +248,9 @@ export function createInteriorWallTexture(): THREE.CanvasTexture {
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
   texture.repeat.set(3, 3);
+  texture.generateMipmaps = true;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   return texture;
 }
 

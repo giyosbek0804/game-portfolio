@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react";
 import { useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useGameStore } from "@/store/useGameStore";
+import { museumProjects } from "@/config/projectsData";
 import { MobileMoveVector } from "./MobileControls";
 
 interface FirstPersonCameraProps {
@@ -16,7 +17,7 @@ const PLAYER_HEIGHT = 1.6;
 const MOVE_SPEED = 4.0;
 const MOUSE_SENSITIVITY = 0.0022;
 const TOUCH_SENSITIVITY = 0.0035;
-const MAX_PITCH = (80 * Math.PI) / 180; // ±80 degrees
+const MAX_PITCH = (80 * Math.PI) / 180;
 
 export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
   mobileMoveVector,
@@ -29,13 +30,12 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
   const walkTarget = useGameStore((state) => state.walkTarget);
   const setWalkTarget = useGameStore((state) => state.setWalkTarget);
   const setPlayerZone = useGameStore((state) => state.setPlayerZone);
+  const activeProject = useGameStore((state) => state.activeProject);
 
-  // Internal orientation angles (radians)
   const yaw = useRef(0);
   const pitch = useRef(0);
   const isPointerLocked = useRef(false);
 
-  // Keyboard input state
   const keys = useRef<{
     forward: boolean;
     backward: boolean;
@@ -48,19 +48,18 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
     right: false,
   });
 
-  // Reusable math objects
   const euler = useRef(new THREE.Euler(0, 0, 0, "YXZ"));
   const moveDirection = useRef(new THREE.Vector3());
   const forwardVector = useRef(new THREE.Vector3());
   const rightVector = useRef(new THREE.Vector3());
 
-  // Spawn outside on the stone porch facing the front door
+  // Spawn outside on porch
   useEffect(() => {
     camera.position.set(0, PLAYER_HEIGHT, 4.5);
     camera.rotation.order = "YXZ";
   }, [camera]);
 
-  // Pointer Lock (Desktop)
+  // Pointer Lock handling
   useEffect(() => {
     const canvas = gl.domElement;
 
@@ -72,7 +71,8 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isPointerLocked.current) return;
+      // If project modal is open or pointer lock not held, ignore mouse look
+      if (!isPointerLocked.current || activeProject) return;
 
       onInteraction();
       yaw.current -= e.movementX * MOUSE_SENSITIVITY;
@@ -81,7 +81,7 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
     };
 
     const handleCanvasClick = () => {
-      if (!isPointerLocked.current) {
+      if (!isPointerLocked.current && !activeProject) {
         canvas.requestPointerLock?.();
       }
     };
@@ -95,11 +95,13 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
       document.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("click", handleCanvasClick);
     };
-  }, [gl, onInteraction]);
+  }, [gl, onInteraction, activeProject]);
 
-  // Keyboard controls (WASD / Arrows)
+  // Keyboard controls
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeProject) return; // Don't move while modal is open
+
       switch (e.code) {
         case "KeyW":
         case "ArrowUp":
@@ -152,25 +154,28 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("keyup", handleKeyUp);
     };
-  }, [onInteraction]);
+  }, [onInteraction, activeProject]);
 
-  // Handle Touch look deltas from MobileControls
+  // Touch look deltas
   useEffect(() => {
+    if (activeProject) return;
     if (mobileLookDelta.x !== 0 || mobileLookDelta.y !== 0) {
       onInteraction();
       yaw.current -= mobileLookDelta.x * TOUCH_SENSITIVITY;
       pitch.current -= mobileLookDelta.y * TOUCH_SENSITIVITY;
       pitch.current = Math.max(-MAX_PITCH, Math.min(MAX_PITCH, pitch.current));
     }
-  }, [mobileLookDelta, onInteraction]);
+  }, [mobileLookDelta, onInteraction, activeProject]);
 
-  // Main game loop update
+  // Game loop
   useFrame((_, delta) => {
     // 1. Camera Rotation
     euler.current.set(pitch.current, yaw.current, 0, "YXZ");
     camera.quaternion.setFromEuler(euler.current);
 
-    // 2. Automated Walk Target (e.g. glide across doorway threshold when clicking Enter/Exit)
+    if (activeProject) return; // Pause movement during active modal
+
+    // 2. Automated Walk Target (e.g. glide across doorway threshold)
     if (walkTarget) {
       const targetVec = new THREE.Vector3(...walkTarget);
       const dist = camera.position.distanceTo(targetVec);
@@ -180,17 +185,14 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
         setWalkTarget(null);
       } else {
         camera.position.lerp(targetVec, delta * 3.2);
-        // Turn camera gently toward travel direction
-        if (walkTarget[2] < 0) {
-          // Entering inside
+        if (walkTarget[2] < camera.position.z) {
           yaw.current = THREE.MathUtils.lerp(yaw.current, 0, delta * 3);
         } else {
-          // Exiting outside
           yaw.current = THREE.MathUtils.lerp(yaw.current, Math.PI, delta * 3);
         }
       }
     } else {
-      // 3. User Movement (Keyboard + Mobile Joystick)
+      // 3. User Movement
       forwardVector.current.set(0, 0, -1).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
       rightVector.current.set(1, 0, 0).applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw.current);
 
@@ -216,37 +218,70 @@ export const FirstPersonCamera: React.FC<FirstPersonCameraProps> = ({
       }
     }
 
-    // 4. Physical Doorway & Wall Bounds Clamping
-    const prevZ = camera.position.z;
+    // 4. Multi-Zone Bounds Clamping: Porch -> Room 1 -> Museum Gallery
+    const z = camera.position.z;
     const x = camera.position.x;
-    const isInside = prevZ < 0;
-    const isInDoorwayX = Math.abs(x) < 0.62;
 
-    if (isInside) {
-      // Inside Room: x in [-4.4, 4.4], z in [-6.4, 0]
-      camera.position.x = Math.max(-4.4, Math.min(4.4, camera.position.x));
-      camera.position.z = Math.max(-6.4, camera.position.z);
-
-      // Dividing wall at z = 0
-      if (!isInDoorwayX || !doorOpen) {
-        camera.position.z = Math.min(-0.35, camera.position.z);
-      }
-    } else {
-      // Outside Porch: x in [-3.8, 3.8], z in [0, 6.2]
+    if (z > 0) {
+      // OUTSIDE PORCH (z from 0 to 6.2, x in [-3.8, 3.8])
       camera.position.x = Math.max(-3.8, Math.min(3.8, camera.position.x));
       camera.position.z = Math.min(6.2, camera.position.z);
 
-      // Dividing wall at z = 0
-      if (!isInDoorwayX || !doorOpen) {
+      const isInFrontDoorway = Math.abs(x) < 0.62 && doorOpen;
+      if (!isInFrontDoorway) {
         camera.position.z = Math.max(0.35, camera.position.z);
       }
+    } else if (z <= 0 && z >= -7.0) {
+      // ROOM 1 (LIVING ROOM: z from -7.0 to 0, x in [-4.4, 4.4])
+      camera.position.x = Math.max(-4.4, Math.min(4.4, camera.position.x));
+
+      // Dividing wall with front door at z = 0
+      const isInFrontDoorway = Math.abs(x) < 0.62 && doorOpen;
+      if (!isInFrontDoorway) {
+        camera.position.z = Math.min(-0.35, camera.position.z);
+      }
+
+      // Dividing wall with grand archway at z = -7.0 (open archway, width 2.4m: Math.abs(x) < 1.25)
+      const isInArchway = Math.abs(x) < 1.25;
+      if (!isInArchway) {
+        camera.position.z = Math.max(-6.65, camera.position.z);
+      }
+    } else {
+      // MUSEUM GALLERY ROOM (z from -16.4 to -7.0, x in [-5.4, 5.4])
+      camera.position.x = Math.max(-5.4, Math.min(5.4, camera.position.x));
+      camera.position.z = Math.max(-16.4, camera.position.z);
+
+      // Archway at z = -7.0
+      const isInArchway = Math.abs(x) < 1.25;
+      if (!isInArchway) {
+        camera.position.z = Math.min(-7.35, camera.position.z);
+      }
+
+      // Museum Pedestal Collisions (circle radius 0.65m around pedestals)
+      museumProjects.forEach((p) => {
+        const [px, , pz] = p.position;
+        const dx = camera.position.x - px;
+        const dz = camera.position.z - pz;
+        const dist = Math.hypot(dx, dz);
+        const minDist = 0.68;
+        if (dist < minDist && dist > 0.001) {
+          const push = (minDist - dist) / dist;
+          camera.position.x += dx * push;
+          camera.position.z += dz * push;
+        }
+      });
     }
 
     camera.position.y = PLAYER_HEIGHT;
 
-    // 5. Update Current Player Zone in Zustand
-    const currentZone = camera.position.z > 0.1 ? "outside" : "inside";
-    setPlayerZone(currentZone);
+    // 5. Update Zone in Zustand
+    if (camera.position.z > 0.1) {
+      setPlayerZone("outside");
+    } else if (camera.position.z <= 0.1 && camera.position.z >= -7.0) {
+      setPlayerZone("living-room");
+    } else {
+      setPlayerZone("museum");
+    }
   });
 
   return null;

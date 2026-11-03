@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { ProjectItem } from "@/config/projectsData";
 
 export interface LightState {
   id: string;
@@ -12,13 +13,14 @@ export interface PlayerState {
   pitch: number;
 }
 
-export type PlayerZone = "outside" | "inside";
+export type PlayerZone = "outside" | "living-room" | "museum";
 
 export interface TargetedInteractable {
   id: string;
   name: string;
-  type: "switch" | "door";
+  type: "switch" | "door" | "pedestal";
   actionText: string;
+  data?: ProjectItem;
 }
 
 interface GameStore {
@@ -31,7 +33,7 @@ interface GameStore {
   walkTarget: [number, number, number] | null;
   setWalkTarget: (target: [number, number, number] | null) => void;
 
-  // Current zone tracking (outside on porch vs inside room)
+  // Current zone tracking (outside porch vs living room vs museum)
   playerZone: PlayerZone;
   setPlayerZone: (zone: PlayerZone) => void;
 
@@ -39,7 +41,11 @@ interface GameStore {
   targetedInteractable: TargetedInteractable | null;
   setTargetedInteractable: (target: TargetedInteractable | null) => void;
 
-  // Lights State (Ceiling beside door + 3 Gallery Paintings with switches)
+  // Active Project Modal (opens glassy project details pop-up)
+  activeProject: ProjectItem | null;
+  setActiveProject: (project: ProjectItem | null) => void;
+
+  // Lights State (Ceiling beside door + Gallery Paintings with switches)
   lights: LightState[];
   toggleLight: (id: string) => void;
   setLight: (id: string, on: boolean) => void;
@@ -62,6 +68,9 @@ export const useGameStore = create<GameStore>((set) => ({
 
   targetedInteractable: null,
   setTargetedInteractable: (targetedInteractable) => set({ targetedInteractable }),
+
+  activeProject: null,
+  setActiveProject: (activeProject) => set({ activeProject }),
 
   lights: [
     { id: "ceiling", name: "Ceiling Light", on: true },

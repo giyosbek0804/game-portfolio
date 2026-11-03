@@ -12,11 +12,7 @@ export const RoomLights: React.FC = () => {
   );
   const anyLightOn = ceilingOn || anyPaintingOn;
 
-  // Dynamic ambient light:
-  // - Ceiling on: bright comfortable room (0.36)
-  // - Only gallery paintings on: moody dramatic gallery focus (0.14)
-  // - All lights off: deep dark moonlight (0.04)
-  const ambientIntensity = ceilingOn ? 0.36 : anyPaintingOn ? 0.14 : 0.04;
+  const ambientIntensity = ceilingOn ? 0.38 : anyPaintingOn ? 0.16 : 0.06;
   const ambientColor = anyLightOn ? "#fef3c7" : "#1e293b";
 
   return (
@@ -25,33 +21,49 @@ export const RoomLights: React.FC = () => {
       <ambientLight color={ambientColor} intensity={ambientIntensity} />
 
       {/* ========================================================= */}
-      {/* 1. EXTERIOR PORCH LIGHT (Always glowing warm welcome)     */}
+      {/* 1. EXTERIOR PORCH LIGHT (Luminous, bright warm welcome)  */}
       {/* ========================================================= */}
-      <group position={[0, 2.9, 0.45]} name="porch-lantern">
+      <group position={[0, 2.9, 0.55]} name="porch-lantern">
+        {/* Primary Radiant Porch Light Source */}
         <pointLight
-          color="#f59e0b"
-          intensity={16}
-          distance={12}
+          color="#fbbf24"
+          intensity={55}
+          distance={20}
           decay={2}
         />
+
+        {/* Downward Ground Fill Light */}
+        <pointLight
+          position={[0, -0.25, 0.1]}
+          color="#fef08a"
+          intensity={30}
+          distance={10}
+          decay={2}
+        />
+
         {/* Lantern Arm */}
-        <mesh position={[0, 0.12, -0.2]}>
-          <boxGeometry args={[0.04, 0.04, 0.4]} />
+        <mesh position={[0, 0.12, -0.25]}>
+          <boxGeometry args={[0.04, 0.04, 0.5]} />
           <meshStandardMaterial color="#0f172a" roughness={0.6} />
         </mesh>
         {/* Lantern Cap */}
         <mesh position={[0, 0.18, 0]}>
-          <cylinderGeometry args={[0.02, 0.18, 0.1, 4]} />
+          <cylinderGeometry args={[0.02, 0.22, 0.12, 4]} />
           <meshStandardMaterial color="#0f172a" roughness={0.6} />
         </mesh>
-        {/* Lantern Glowing Core */}
+        {/* Radiant Glowing Core */}
         <mesh position={[0, 0.02, 0]}>
-          <boxGeometry args={[0.16, 0.22, 0.16]} />
-          <meshBasicMaterial color="#fef08a" />
+          <boxGeometry args={[0.18, 0.24, 0.18]} />
+          <meshBasicMaterial color="#fffbeb" />
+        </mesh>
+        {/* Outer Glow Halo */}
+        <mesh position={[0, 0.02, 0]}>
+          <boxGeometry args={[0.22, 0.28, 0.22]} />
+          <meshBasicMaterial color="#fef08a" transparent opacity={0.25} />
         </mesh>
         {/* Lantern Finial */}
-        <mesh position={[0, -0.14, 0]}>
-          <coneGeometry args={[0.05, 0.1, 4]} />
+        <mesh position={[0, -0.15, 0]}>
+          <coneGeometry args={[0.06, 0.12, 4]} />
           <meshStandardMaterial color="#0f172a" roughness={0.6} />
         </mesh>
       </group>
@@ -89,7 +101,7 @@ export const RoomLights: React.FC = () => {
           />
         </mesh>
 
-        {/* Glowing Incandescent Light Bulb inside the shade */}
+        {/* Glowing Bulb */}
         <mesh position={[0, -0.95, 0]}>
           <sphereGeometry args={[0.1, 16, 16]} />
           {ceilingOn ? (
@@ -99,7 +111,7 @@ export const RoomLights: React.FC = () => {
           )}
         </mesh>
 
-        {/* Actual Point Light Source */}
+        {/* Point Light Source */}
         {ceilingOn && (
           <pointLight
             position={[0, -1.02, 0]}
@@ -109,6 +121,23 @@ export const RoomLights: React.FC = () => {
             decay={2}
           />
         )}
+      </group>
+
+      {/* ========================================================= */}
+      {/* 3. MUSEUM GALLERY CEILING ACCENT LIGHTING                */}
+      {/* ========================================================= */}
+      <group position={[0, 3.6, -12]} name="museum-ambient-spot">
+        <pointLight
+          color="#fed7aa"
+          intensity={20}
+          distance={14}
+          decay={2}
+        />
+        {/* Recessed Museum Ceiling Fixture */}
+        <mesh position={[0, 0.08, 0]}>
+          <boxGeometry args={[0.8, 0.06, 0.4]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.5} />
+        </mesh>
       </group>
     </group>
   );
